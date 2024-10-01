@@ -1,3 +1,4 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, \
     QMainWindow, QTableWidget, QTableWidgetItem, QDialog, QComboBox
 from PyQt6.QtGui import QAction
@@ -13,6 +14,7 @@ class MainWindow(QMainWindow):
         # Menu Item
         file_menu = self.menuBar().addMenu("&File")
         help_menu = self.menuBar().addMenu("&Help")
+        edit_menu = self.menuBar().addMenu("&Edit")
 
         # Sub Menu Item
         add_student = QAction("Add Student", self)
@@ -21,6 +23,10 @@ class MainWindow(QMainWindow):
 
         about_action = QAction("About", self)
         help_menu.addAction(about_action)
+
+        edit_action = QAction("Search", self)
+        edit_action.triggered.connect(self.search)
+        edit_menu.addAction(edit_action)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -41,6 +47,47 @@ class MainWindow(QMainWindow):
     def insert(self):
         dialog = InsertDialog()
         dialog.exec()
+
+    def search(self):
+        search_dialog = SearchDialog()
+        search_dialog.exec()
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search Student")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        layout = QVBoxLayout()
+
+        # Add student Search widget
+        self.search_name = QLineEdit()
+        self.search_name.setPlaceholderText("Name")
+        layout.addWidget(self.search_name)
+
+        # Add a submit button
+        button = QPushButton("Search")
+        button.clicked.connect(self.search)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def search(self):
+        name = self.search_name.text()
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        result = cursor.execute("SELECT * FROM students WHERE name = ?", (name,))
+        rows = list(result)
+        print(rows)
+        items = main_windows.table.findItems(name, Qt.MatchFlag.MatchFixedString)
+        for item in items:
+            print(item)
+            main_windows.table.item(item.row(),
+                                    1).setSelected(True)
+            cursor.close()
+            connection.close()
 
 
 class InsertDialog(QDialog):
